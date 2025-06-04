@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Warehouse Dashboard</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+  <script>
+    function scheduleNextRefresh() {
+      const now = new Date();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      const nextQuarter = [15, 30, 45, 60].find(min => min > minutes);
+      const minutesUntilNext = nextQuarter - minutes - (seconds > 0 ? 1 : 0);
+      const secondsUntilNext = (60 - seconds) % 60;
+      const totalMs = (minutesUntilNext * 60 + secondsUntilNext) * 1000;
+
+      console.log(`Next refresh in ${Math.floor(totalMs / 1000)} seconds`);
+      setTimeout(() => location.reload(), totalMs);
+    }
+
+    window.onload = scheduleNextRefresh;
+  </script>
+</head>
+<body>
+  <iframe
+    src="https://lookerstudio.google.com/embed/reporting/218f0a7f-d72e-4b7d-9012-3d1afd3bb65f/page/o2AMF"
+    allowfullscreen
+  ></iframe>
+</body>
+</html>
