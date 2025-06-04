@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Warehouse Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Dashboard dengan Countdown</title>
   <style>
     html, body {
       margin: 0;
@@ -14,29 +15,93 @@
       height: 100%;
       border: none;
     }
+    /* Style untuk kotak countdown di pojok kanan atas */
+    #countdown {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: sans-serif;
+      font-size: 16px;
+      z-index: 1000;
+    }
   </style>
   <script>
-    function scheduleNextRefresh() {
+    // Fungsi untuk menghitung waktu target berikutnya (:00, :15, :30, :45)
+    function getNextRefreshTime() {
       const now = new Date();
       const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
+      // Tentukan menit berikutnya: 15, 30, 45, atau 60 (artinya jam+1 dan menit 0)
+      let nextMinute;
+      if (minutes < 15) {
+        nextMinute = 15;
+      } else if (minutes < 30) {
+        nextMinute = 30;
+      } else if (minutes < 45) {
+        nextMinute = 45;
+      } else {
+        // Jika >=45, maka target berikutnya adalah menit 60 (jam berikutnya, menit 0)
+        nextMinute = 60;
+      }
 
-      const nextQuarter = [15, 30, 45, 60].find(min => min > minutes);
-      const minutesUntilNext = nextQuarter - minutes - (seconds > 0 ? 1 : 0);
-      const secondsUntilNext = (60 - seconds) % 60;
-      const totalMs = (minutesUntilNext * 60 + secondsUntilNext) * 1000;
-
-      console.log(`Next refresh in ${Math.floor(totalMs / 1000)} seconds`);
-      setTimeout(() => location.reload(), totalMs);
+      // Buat objek Date baru untuk waktu refresh
+      const next = new Date(now.getTime());
+      if (nextMinute === 60) {
+        next.setHours(now.getHours() + 1);
+        next.setMinutes(0);
+      } else {
+        next.setMinutes(nextMinute);
+      }
+      next.setSeconds(0);
+      next.setMilliseconds(0);
+      return next;
     }
 
-    window.onload = scheduleNextRefresh;
+    // Fungsi utama yang mengatur countdown dan schedule reload halaman
+    function startTimer() {
+      const countdownElem = document.getElementById('countdown');
+      let nextRefresh = getNextRefreshTime();
+      // Hitung selisih dalam milidetik sampai waktu refresh
+      const totalMs = nextRefresh - new Date();
+      // Jadwalkan reload tepat di waktu target
+      setTimeout(() => location.reload(), totalMs);
+
+      // Update teks countdown setiap detik
+      const intervalId = setInterval(() => {
+        const now = new Date();
+        const diffMs = nextRefresh - now;
+
+        if (diffMs <= 0) {
+          // Saat sudah saatnya refresh, hentikan interval dan tampilkan teks
+          clearInterval(intervalId);
+          countdownElem.textContent = 'Refreshing…';
+        } else {
+          // Hitung menit dan detik tersisa
+          const diffSec = Math.floor(diffMs / 1000);
+          const m = Math.floor(diffSec / 60);
+          const s = diffSec % 60;
+          // Format jadi MM:SS (misal “4:07”)
+          const formatted = `${m}:${s.toString().padStart(2, '0')}`;
+          countdownElem.textContent = `Refresh in ${formatted}`;
+        }
+      }, 1000);
+    }
+
+    // Jalankan timer saat halaman selesai dimuat
+    window.onload = startTimer;
   </script>
 </head>
 <body>
+  <!-- Kotak countdown -->
+  <div id="countdown">Loading…</div>
+
+  <!-- Iframe untuk embed Looker Studio -->
   <iframe
     src="https://lookerstudio.google.com/embed/reporting/218f0a7f-d72e-4b7d-9012-3d1afd3bb65f/page/o2AMF"
-    allowfullscreen
-  ></iframe>
+    allowfullscreen>
+  </iframe>
 </body>
 </html>
