@@ -1,24 +1,34 @@
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard dengan Countdown</title>
+  <title>Dashboard Rotator + Countdown</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       overflow: hidden;
+      background: #000;
     }
+
     iframe {
+      position: absolute;
       width: 100%;
       height: 100%;
       border: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
     }
-    /* Style untuk kotak countdown di pojok kanan atas */
-    #countdown {
+
+    iframe.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #countdown, #switchTimer {
       position: absolute;
-      top: 10px;
-      right: 10px;
       background: rgba(0, 0, 0, 0.5);
       color: #fff;
       padding: 5px 10px;
@@ -27,13 +37,60 @@
       font-size: 16px;
       z-index: 1000;
     }
+
+    #countdown {
+      top: 10px;
+      right: 10px;
+    }
+
+    #switchTimer {
+      bottom: 10px;
+      right: 10px;
+    }
   </style>
+</head>
+<body>
+
+  <!-- Countdown ke refresh kuartal -->
+  <div id="countdown">Loading…</div>
+
+  <!-- Countdown ke switching dashboard -->
+  <div id="switchTimer">Switch in 60s</div>
+
+  <!-- Dua Looker Studio report -->
+  <iframe id="iframe1" class="visible"
+    src="https://lookerstudio.google.com/embed/reporting/218f0a7f-d72e-4b7d-9012-3d1afd3bb65f/page/o2AMF"
+    allowfullscreen></iframe>
+
+  <iframe id="iframe2"
+    src="https://lookerstudio.google.com/embed/reporting/b5adaf75-979a-4b1b-8c8c-1b01d6d0d27b/page/o2AMF"
+    allowfullscreen></iframe>
+
   <script>
-    // Fungsi untuk menghitung waktu target berikutnya (:00, :15, :30, :45)
+    const iframes = [document.getElementById('iframe1'), document.getElementById('iframe2')];
+    const switchTimerElem = document.getElementById('switchTimer');
+    let current = 0;
+    let switchCountdown = 60;
+
+    // Timer switch antar iframe tiap 60 detik
+    setInterval(() => {
+      iframes[current].classList.remove('visible');
+      current = (current + 1) % iframes.length;
+      iframes[current].classList.add('visible');
+      switchCountdown = 60; // reset countdown
+    }, 60 * 1000);
+
+    // Update counter switch tiap detik
+    setInterval(() => {
+      switchCountdown--;
+      if (switchCountdown < 0) switchCountdown = 0;
+      switchTimerElem.textContent = `${switchCountdown}`;
+    }, 1000);
+
+    // Fungsi hitung waktu refresh di kuartal jam
     function getNextRefreshTime() {
       const now = new Date();
       const minutes = now.getMinutes();
-      // Tentukan menit berikutnya: 15, 30, 45, atau 60 (artinya jam+1 dan menit 0)
       let nextMinute;
       if (minutes < 15) {
         nextMinute = 15;
@@ -42,11 +99,9 @@
       } else if (minutes < 45) {
         nextMinute = 45;
       } else {
-        // Jika >=45, maka target berikutnya adalah menit 60 (jam berikutnya, menit 0)
         nextMinute = 60;
       }
 
-      // Buat objek Date baru untuk waktu refresh
       const next = new Date(now.getTime());
       if (nextMinute === 60) {
         next.setHours(now.getHours() + 1);
@@ -59,48 +114,30 @@
       return next;
     }
 
-    // Fungsi utama yang mengatur countdown dan schedule reload halaman
+    // Countdown kuartal jam untuk auto-refresh
     function startTimer() {
       const countdownElem = document.getElementById('countdown');
       let nextRefresh = getNextRefreshTime();
-      // Hitung selisih dalam milidetik sampai waktu refresh
       const totalMs = nextRefresh - new Date();
-      // Jadwalkan reload tepat di waktu target
       setTimeout(() => location.reload(), totalMs);
 
-      // Update teks countdown setiap detik
       const intervalId = setInterval(() => {
         const now = new Date();
         const diffMs = nextRefresh - now;
 
         if (diffMs <= 0) {
-          // Saat sudah saatnya refresh, hentikan interval dan tampilkan teks
           clearInterval(intervalId);
           countdownElem.textContent = 'Refreshing…';
         } else {
-          // Hitung menit dan detik tersisa
           const diffSec = Math.floor(diffMs / 1000);
           const m = Math.floor(diffSec / 60);
           const s = diffSec % 60;
-          // Format jadi MM:SS (misal “4:07”)
-          const formatted = `${m}:${s.toString().padStart(2, '0')}`;
-          countdownElem.textContent = `Refresh in ${formatted}`;
+          countdownElem.textContent = `Refresh in ${m}:${s.toString().padStart(2, '0')}`;
         }
       }, 1000);
     }
 
-    // Jalankan timer saat halaman selesai dimuat
     window.onload = startTimer;
   </script>
-</head>
-<body>
-  <!-- Kotak countdown -->
-  <div id="countdown">Loading…</div>
-
-  <!-- Iframe untuk embed Looker Studio -->
-  <iframe
-    src="https://lookerstudio.google.com/embed/reporting/218f0a7f-d72e-4b7d-9012-3d1afd3bb65f/page/o2AMF"
-    allowfullscreen>
-  </iframe>
 </body>
 </html>
